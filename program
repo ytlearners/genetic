@@ -1,0 +1,59 @@
+import random
+
+items = [(10, 25), (20, 65), (30, 125), (40, 155), (55, 200)]  #
+
+
+population_size = 100
+num_generations = 100
+mutation_rate = 0.01
+max_weight = 50
+
+
+def generate_population(size):
+    return [[random.choice([0, 1]) for _ in range(len(items))] for _ in range(size)]
+
+
+def fitness(individual):
+    total_value = sum(item[0] * selected for item, selected in zip(items, individual))
+    total_weight = sum(item[1] * selected for item, selected in zip(items, individual))
+    if total_weight > max_weight:
+        return 0  
+    else:
+        return total_value
+
+
+def genetic_algorithm():
+    population = generate_population(population_size)
+    for generation in range(num_generations):
+        
+        fitness_values = [fitness(individual) for individual in population]
+        
+        total_fitness = sum(fitness_values)
+        if total_fitness == 0:
+            
+            population = generate_population(population_size)
+            continue
+        parent_probs = [fitness_val / total_fitness for fitness_val in fitness_values]
+        selected_parents = random.choices(population, weights=parent_probs, k=2)
+        # Crossover (single point crossover)
+        crossover_point = random.randint(1, len(items) - 1)
+        child1 = selected_parents[0][:crossover_point] + selected_parents[1][crossover_point:]
+        child2 = selected_parents[1][:crossover_point] + selected_parents[0][crossover_point:]
+        # Mutation
+        child1 = [bit ^ 1 if random.random() < mutation_rate else bit for bit in child1]
+        child2 = [bit ^ 1 if random.random() < mutation_rate else bit for bit in child2]
+        # Remove parents with the lowest fitness values
+        min_parent_fitness = min(fitness_values)
+        worst_parents = [parent for parent, fitness_val in zip(selected_parents, fitness_values) if fitness_val == min_parent_fitness]
+        if worst_parents[0] in population:
+            population.remove(worst_parents[0])
+        if worst_parents[1] in population:
+            population.remove(worst_parents[1])
+        # Replace parents with offspring
+        population.extend([child1, child2])
+    # Find the best individual in the final population
+    best_individual = max(population, key=fitness)
+    print(f"Best Individual: {best_individual}, Fitness: {fitness(best_individual)}")
+
+if __name__ == "__main__":
+    genetic_algorithm()
